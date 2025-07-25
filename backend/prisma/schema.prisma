@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  password  String
+  role      Role     @default(USER)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  dealer    Dealer?
+  buyer     Buyer?
+}
+
+enum Role {
+  USER
+  DEALER
+  ADMIN
+}
+
+model Dealer {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
+  licenseNumber       String
+  verificationStatus  String   @default("pending")
+  createdAt           DateTime @default(now())
+
+  user                User     @relation(fields: [userId], references: [id])
+  cars                Car[]
+}
+
+model Buyer {
+  userId    Int     @id
+  preferences String?
+  createdAt  DateTime @default(now())
+
+  user       User   @relation(fields: [userId], references: [id])
+  shortlists Shortlist[]
+}
+
+model Car {
+  id        Int      @id @default(autoincrement())
+  dealerId  Int
+  title     String
+  price     Float
+  year      Int
+  mileage   Int
+  location  String
+  fuelType  String
+  images    String   // comma-separated or JSON array string
+  status    String   @default("available")
+  createdAt DateTime @default(now())
+
+  dealer    Dealer   @relation(fields: [dealerId], references: [id])
+  shortlists Shortlist[]
+}
+
+model Shortlist {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  carId    Int
+  createdAt DateTime @default(now())
+
+  buyer    Buyer    @relation(fields: [userId], references: [userId])
+  car      Car      @relation(fields: [carId], references: [id])
+}
